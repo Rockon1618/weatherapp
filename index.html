@@ -45,56 +45,76 @@
     </div>
 
     <script>
-        const apiKey="3492f4ddd861f10923666221fcc4a393";
-        const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
-
+        const apiKey = "3492f4ddd861f10923666221fcc4a393";
+        const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&";
+    
         const searchBox = document.querySelector(".search input");
         const searchBtn = document.querySelector(".search button");
         const weatherIcon = document.querySelector(".weather-icon");
-
-        async function checkWeather(city){
-
-            const response = await fetch(apiUrl + city +`&appid=${apiKey} `);
-
-            if(response.status == 404){
+    
+        async function checkWeatherByCity(city) {
+            const response = await fetch(apiUrl + `q=${city}&appid=${apiKey}`);
+            displayWeather(response);
+        }
+    
+        async function checkWeatherByCoords(lat, lon) {
+            const response = await fetch(apiUrl + `lat=${lat}&lon=${lon}&appid=${apiKey}`);
+            displayWeather(response);
+        }
+    
+        async function displayWeather(response) {
+            if (response.status === 404) {
                 document.querySelector(".error").style.display = "block";
                 document.querySelector(".weather").style.display = "none";
+            } else {
+                const data = await response.json();
+    
+                document.querySelector(".city").innerHTML = data.name;
+                document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + "°C";
+                document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
+                document.querySelector(".wind").innerHTML = data.wind.speed + " km/hr";
+    
+                if (data.weather[0].main === "Clouds") {
+                    weatherIcon.src = "images/pcloudy.png";
+                } else if (data.weather[0].main === "Clear") {
+                    weatherIcon.src = "images/sunny.png";
+                } else if (data.weather[0].main === "Rain") {
+                    weatherIcon.src = "images/Tshower.png";
+                } else if (data.weather[0].main === "Drizzle") {
+                    weatherIcon.src = "images/Rain.png";
+                } else if (data.weather[0].main === "Mist" || data.weather[0].main === "Haze") {
+                    weatherIcon.src = "images/mist.png";
+                }
+    
+                document.querySelector(".error").style.display = "none";
+                document.querySelector(".weather").style.display = "block";
             }
-            else{
-                var data = await response.json();
-
-            // console.log(data);
-            document.querySelector(".city").innerHTML = data.name;
-            document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + "°C";
-            document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
-            document.querySelector(".wind").innerHTML = data.wind.speed+"km/hr";
-            
-
-            if(data.weather[0].main == "Clouds"){
-                weatherIcon.src = "images/pcloudy.png"
-            }
-            else if(data.weather[0].main == "Clear"){
-                weatherIcon.src = "images/sunny.png"
-            }
-            else if(data.weather[0].main == "Rain"){
-                weatherIcon.src = "images/Tshower.png"
-            }
-            else if(data.weather[0].main == "Drizzle"){
-                weatherIcon.src = "images/Rain.png"
-            }
-            else if(data.weather[0].main == "Mist" || data.weather[0].main == "Haze"){
-                weatherIcon.src = "images/mist.png"
-            }
-            document.querySelector(".weather").style.display = "block";
         }
-    }
-    searchBtn.addEventListener("click", () =>{
-            checkWeather(searchBox.value);
-        })
-        // const apiUrl2="https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,precipitation,rain";
-
-        checkWeather();
-            
+    
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        checkWeatherByCoords(lat, lon);
+                    },
+                    () => {
+                        alert("Location access denied. Please search for a city manually.");
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by your browser. Please search for a city manually.");
+            }
+        }
+    
+        searchBtn.addEventListener("click", () => {
+            checkWeatherByCity(searchBox.value);
+        });
+    
+        // Call getLocation when the page loads
+        window.onload = getLocation;
     </script>
+    
 </body>
 </html>
